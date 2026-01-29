@@ -1,0 +1,62 @@
+{
+  "name": "rental cars - reminder",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 9 * * *" }] } },
+      "name": "Daily 9am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 0],
+      "id": "rem-schedule-001"
+    },
+    {
+      "parameters": {
+        "documentId": { "__rl": true, "value": "1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4", "mode": "list", "cachedResultName": "coustomer details", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4/edit?usp=drivesdk" },
+        "sheetName": { "__rl": true, "value": "gid=0", "mode": "list", "cachedResultName": "Sheet1", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4/edit#gid=0" },
+        "options": {}
+      },
+      "name": "Read Bookings",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [460, 0],
+      "id": "rem-sheets-001",
+      "credentials": { "googleSheetsOAuth2Api": { "id": "x0mvA8X5CUc10Ppf", "name": "Google Sheets account" } }
+    },
+    {
+      "parameters": {
+        "functionCode": "const tomorrow = new Date();\ntomorrow.setDate(tomorrow.getDate() + 1);\nconst tomorrowStr = tomorrow.toISOString().slice(0, 10);\nconst items = $input.all();\nconst filtered = items.filter(i => {\n  const d = (i.json['Pickup Date'] ?? i.json.pickupDate ?? i.json['pickupDate'] ?? '').toString().slice(0, 10);\n  return d === tomorrowStr;\n});\nreturn filtered.map(i => ({ json: i.json }));"
+      },
+      "name": "Pickup Tomorrow",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [680, 0],
+      "id": "rem-func-001"
+    },
+    {
+      "parameters": {
+        "toEmail": "={{ $json.Email || $json.email }}",
+        "subject": "Reminder: Your rental pickup is tomorrow",
+        "emailType": "html",
+        "message": "=<p>Hi {{ $json.Name || $json.name }},</p><p>This is a reminder that your rental car pickup is scheduled for tomorrow.</p><p>We look forward to seeing you.</p>",
+        "additionalFields": {}
+      },
+      "name": "Send Reminder",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [900, 0],
+      "id": "rem-gmail-001",
+      "credentials": {}
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 9am": { "main": [[{ "node": "Read Bookings", "type": "main", "index": 0 }]] },
+    "Read Bookings": { "main": [[{ "node": "Pickup Tomorrow", "type": "main", "index": 0 }]] },
+    "Pickup Tomorrow": { "main": [[{ "node": "Send Reminder", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "d5032510ebd26e757bfd1fafcf250e8094ef3a8c4de8460c932e8da6fd632138" },
+  "id": "rem-rental-cars-001",
+  "tags": []
+}

@@ -1,0 +1,62 @@
+{
+  "name": "rental cars - auto-release",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 0 * * *" }] } },
+      "name": "Daily Midnight",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 0],
+      "id": "rel-schedule-001"
+    },
+    {
+      "parameters": {
+        "documentId": { "__rl": true, "value": "1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4", "mode": "list", "cachedResultName": "bookings", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4/edit" },
+        "sheetName": { "__rl": true, "value": "gid=0", "mode": "list", "cachedResultName": "Sheet1", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4/edit#gid=0" },
+        "options": {}
+      },
+      "name": "Read Bookings",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [460, 0],
+      "id": "rel-sheets-001",
+      "credentials": { "googleSheetsOAuth2Api": { "id": "x0mvA8X5CUc10Ppf", "name": "Google Sheets account" } }
+    },
+    {
+      "parameters": {
+        "functionCode": "const today = new Date().toISOString().slice(0, 10);\nconst items = $input.all();\nconst filtered = items.filter(i => {\n  const d = (i.json['Return Date'] ?? i.json.returnDate ?? i.json['Return Date'] ?? '').toString().slice(0, 10);\n  return d && d < today;\n}).map(i => ({\n  json: {\n    'Car ID': i.json['Car ID'] ?? i.json.carId,\n    'Status': 'Available'\n  }\n}));\nreturn filtered;"
+      },
+      "name": "Past Return Date",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [680, 0],
+      "id": "rel-func-001"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "1C381vRmNOAmayUjNHlORyS-B5TbLl4Xuv8ieskEh29Y", "mode": "list", "cachedResultName": "car_details", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C381vRmNOAmayUjNHlORyS-B5TbLl4Xuv8ieskEh29Y/edit?usp=drivesdk" },
+        "sheetName": { "__rl": true, "value": "gid=0", "mode": "list", "cachedResultName": "Sheet1", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C381vRmNOAmayUjNHlORyS-B5TbLl4Xuv8ieskEh29Y/edit#gid=0" },
+        "columnsToMatchOn": "Car ID",
+        "options": {}
+      },
+      "name": "Set Car Available",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [900, 0],
+      "id": "rel-sheets-002",
+      "credentials": { "googleSheetsOAuth2Api": { "id": "x0mvA8X5CUc10Ppf", "name": "Google Sheets account" } }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Midnight": { "main": [[{ "node": "Read Bookings", "type": "main", "index": 0 }]] },
+    "Read Bookings": { "main": [[{ "node": "Past Return Date", "type": "main", "index": 0 }]] },
+    "Past Return Date": { "main": [[{ "node": "Set Car Available", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "instanceId": "d5032510ebd26e757bfd1fafcf250e8094ef3a8c4de8460c932e8da6fd632138" },
+  "id": "rel-rental-cars-001",
+  "tags": []
+}
