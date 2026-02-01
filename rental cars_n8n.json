@@ -1,0 +1,731 @@
+{
+  "name": "rental cars",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rental-booking",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1552,
+        240
+      ],
+      "id": "24ef88a0-739b-4fb3-a40c-89c08862f016",
+      "webhookId": "ecd2556c-a94f-40fe-9d2e-9deda9d0bdcd"
+    },
+    {
+      "parameters": {
+        "path": "rental-booking-form",
+        "formTitle": "Rental Car Booking",
+        "formDescription": "Fill in your details to book a rental car. We'll confirm your reservation and send you a confirmation email.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "your@email.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Full Name",
+              "placeholder": "Jane Doe",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone",
+              "placeholder": "+1234567890"
+            },
+            {
+              "fieldLabel": "Pickup Date",
+              "fieldType": "date"
+            },
+            {
+              "fieldLabel": "Return Date",
+              "fieldType": "date"
+            }
+          ]
+        },
+        "responseMode": "responseNode",
+        "options": {
+          "buttonLabel": "Book Rental Car"
+        }
+      },
+      "name": "Booking Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        -1552,
+        80
+      ],
+      "id": "ae0e1afa-f074-4fc1-b45e-9870757f0b26",
+      "webhookId": "47d5d6cc-dfaf-420f-baf4-5366cbb412fe"
+    },
+    {
+      "parameters": {
+        "functionCode": "const raw = $input.first().json;\nconst body = raw.formData || raw.body || raw;\nconst email = (body.email || body.Email || '').toString().trim();\nconst name = (body.name || body['Full Name'] || body.Name || '').toString().trim();\nconst phone = (body.phone || body.Phone || '').toString().trim() || undefined;\nconst pickupDate = body.pickupDate || body['Pickup Date'] || body.pickup_date || undefined;\nconst returnDate = body.returnDate || body['Return Date'] || body.return_date || undefined;\nconst missing = [];\nif (!email) missing.push('email');\nif (!name) missing.push('name');\nif (missing.length > 0) {\n  return [{ json: { valid: false, error: `Missing required fields: ${missing.join(', ')}` } }];\n}\nreturn [{ json: { valid: true, email, name, phone, pickupDate, returnDate } }];"
+      },
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1360,
+        240
+      ],
+      "id": "f4bdc708-e6a1-4e3f-8198-900695a44bd0"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-valid",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "IF Valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1152,
+        240
+      ],
+      "id": "cc702d58-e7b9-420c-bb49-8daa94377e13"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, error: $json.error, formSubmittedText: $json.error } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "name": "Respond Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        128
+      ],
+      "id": "a33aa3dc-7a6b-48b2-acde-c7f69e89519c"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4",
+          "mode": "list",
+          "cachedResultName": "coustomer details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "name": "Google Sheets Rentals",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [
+        -960,
+        240
+      ],
+      "id": "ee18a0af-0b4a-422a-98a6-59d942def91b",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "x0mvA8X5CUc10Ppf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1C381vRmNOAmayUjNHlORyS-B5TbLl4Xuv8ieskEh29Y",
+          "mode": "list",
+          "cachedResultName": "car_details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C381vRmNOAmayUjNHlORyS-B5TbLl4Xuv8ieskEh29Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C381vRmNOAmayUjNHlORyS-B5TbLl4Xuv8ieskEh29Y/edit#gid=0"
+        },
+        "options": {}
+      },
+      "name": "Google Sheets Cars",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [
+        -752,
+        240
+      ],
+      "id": "976b3d5f-9bd0-4a8b-bd68-efdb8f949cf5",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "x0mvA8X5CUc10Ppf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const items = $input.all();\nconst available = items.filter(i => (i.json.Status || i.json.status || '') === 'Available');\nif (available.length === 0) {\n  return [{ json: { available: false } }];\n}\nreturn [{ json: { available: true, cars: available.map(i => i.json) } }];"
+      },
+      "name": "Check Availability",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        240
+      ],
+      "id": "8dd9bc00-165e-48ec-ad2f-7b4f14e4cc9e"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-avail",
+              "leftValue": "={{ $json.available }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "IF Available",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -352,
+        240
+      ],
+      "id": "e734dfd5-07d1-4304-bd01-29fbfbc83d98"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, error: 'No cars available at the moment. Please try again later.', formSubmittedText: 'No cars available at the moment. Please try again later.' } }}",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "name": "Respond No Cars",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        128
+      ],
+      "id": "9da7b1b1-5823-4b30-86a3-df1bbcc6870d"
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = $input.first().json;\nconst car = data.cars[0];\nconst carId = car['Car ID'] ?? car['Car id'] ?? car.car_id;\nconst model = car['Model'] ?? car.model;\nconst dailyRate = Number(car['Daily Rate'] ?? car['dailyRate'] ?? 0) || 0;\nconst validate = $('Validate Input').first().json;\nconst pickup = validate.pickupDate ? new Date(validate.pickupDate) : null;\nconst ret = validate.returnDate ? new Date(validate.returnDate) : null;\nconst days = pickup && ret ? Math.max(1, Math.ceil((ret - pickup) / (24 * 60 * 60 * 1000))) : 1;\nconst totalPrice = dailyRate * days;\nreturn {\n  json: {\n    car_id: carId,\n    model: model,\n    allocated: true,\n    dailyRate,\n    days,\n    totalPrice,\n    'Car ID': carId,\n    'Status': 'Booked'\n  }\n};"
+      },
+      "name": "Function Allocation",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        240
+      ],
+      "id": "f9c7eb30-aa7d-4113-ba15-544bb5f081f3"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1C381vRmNOAmayUjNHlORyS-B5TbLl4Xuv8ieskEh29Y",
+          "mode": "list",
+          "cachedResultName": "car_details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C381vRmNOAmayUjNHlORyS-B5TbLl4Xuv8ieskEh29Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1C381vRmNOAmayUjNHlORyS-B5TbLl4Xuv8ieskEh29Y/edit#gid=0"
+        },
+        "options": {}
+      },
+      "name": "Google Sheets Update Cars",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [
+        48,
+        240
+      ],
+      "id": "94f6c718-c34d-44e2-bbed-c79b80f86f62",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "x0mvA8X5CUc10Ppf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1hvHjjlZ1ihDuqzKC2-OKiAQEHp94BMzeCbJrR2fDhvM",
+          "mode": "list",
+          "cachedResultName": "driver_details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hvHjjlZ1ihDuqzKC2-OKiAQEHp94BMzeCbJrR2fDhvM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hvHjjlZ1ihDuqzKC2-OKiAQEHp94BMzeCbJrR2fDhvM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "name": "Google Sheets Drivers",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [
+        256,
+        240
+      ],
+      "id": "5bd03cf0-537d-4913-afbb-c83e589ad1d0",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "x0mvA8X5CUc10Ppf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Google Sheets Rentals').item.json.email }}",
+        "subject": "Your Rental Car Booking Confirmation",
+        "message": "=<p>Hi {{ $json.name }},</p><p>Your rental car booking is confirmed.</p><p><strong>Car:</strong> {{ $json.car.model }} (ID: {{ $json.car.car_id }})</p><p><strong>Total:</strong> ${{ $json.totalPrice }}</p><p><a href=\"{{ $json.paymentLink }}\">Pay here</a></p><p>Booking ID: {{ $json.bookingId }}</p><p>Thank you for choosing us.</p>",
+        "options": {}
+      },
+      "name": "Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        448,
+        240
+      ],
+      "id": "2bfb8ff8-9632-4ab8-9105-d6d9300b6af2",
+      "webhookId": "ba9a2c7c-1a22-45b8-990e-48e14109937f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gJszCyGsD683Hiuu",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const validate = $('Validate Input').first().json;\nconst allocation = $('Function Allocation').first().json;\nconst bookingId = 'BK-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);\nconst totalPrice = allocation.totalPrice ?? 0;\nconst paymentLink = 'https://pay.yourcompany.com?booking=' + encodeURIComponent(bookingId) + '&amount=' + totalPrice;\nreturn {\n  json: {\n    success: true,\n    bookingId,\n    message: 'Your rental car booking is confirmed.',\n    formSubmittedText: 'Your rental car booking is confirmed! Check your email for details.',\n    car: { car_id: allocation.car_id, model: allocation.model, allocated: true },\n    totalPrice,\n    paymentLink,\n    email: validate.email,\n    name: validate.name,\n    phone: validate.phone || '',\n    pickupDate: validate.pickupDate,\n    returnDate: validate.returnDate\n  }\n};"
+      },
+      "name": "Build Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        656,
+        240
+      ],
+      "id": "1aa67646-f13f-429a-82e4-bb03a68426f4"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        848,
+        240
+      ],
+      "id": "5ab89d5d-8af9-493d-ab38-a7d0df7a6567"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "New rental booking: {{ $json.name }}",
+        "message": "=<p>New booking received.</p><p><strong>Customer:</strong> {{ $json.name }} ({{ $json.email }})</p><p><strong>Pickup:</strong> {{ $json.pickupDate }} | <strong>Return:</strong> {{ $json.returnDate }}</p><p>Car will be assigned shortly.</p>",
+        "options": {}
+      },
+      "name": "Admin Alert New Booking",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        368
+      ],
+      "id": "ed5adcf3-e533-4681-a600-027fd9e94e4c",
+      "webhookId": "95c8af03-ed24-44f8-ae32-a17af3d8891a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gJszCyGsD683Hiuu",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "shekhargiramkar2004@gmail.com",
+        "subject": "No cars available - rental attempt",
+        "message": "=<p>A customer tried to book but no cars were available.</p><p>Consider adding inventory or checking car status.</p>",
+        "options": {}
+      },
+      "name": "Admin Alert No Cars",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        16
+      ],
+      "id": "3ef97000-d156-420b-aa4d-1771df1aec2a",
+      "webhookId": "9feb21f1-24d8-4d26-8a80-add697b509e4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gJszCyGsD683Hiuu",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "SMS Twilio",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        128
+      ],
+      "id": "2f1c8307-4b28-42ca-94eb-257a87537202",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "shekhargiramkar2004@gmail.com",
+          "mode": "list",
+          "cachedResultName": "shekhargiramkar2004@gmail.com"
+        },
+        "start": "={{ $json.pickupDate ? new Date($json.pickupDate).toISOString().slice(0,19) + 'Z' : '' }}",
+        "end": "={{ $json.returnDate ? new Date($json.returnDate).toISOString().slice(0,19) + 'Z' : '' }}",
+        "additionalFields": {}
+      },
+      "name": "Google Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        368
+      ],
+      "id": "9dddc199-ce66-4b35-a9aa-2ceccffa5790",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Zh2P6O2iqpSniqPY",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const build = $input.first().json;\nconst returnDate = $('Validate Input').first().json.returnDate;\nreturn [{ json: { 'Booking ID': build.bookingId, 'Car ID': build.car.car_id, 'Return Date': returnDate } }];"
+      },
+      "name": "Prepare Booking Record",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        16
+      ],
+      "id": "b34e2a9c-e63b-46d4-8360-38b099feccd1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4",
+          "mode": "list",
+          "cachedResultName": "bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cOlr_5MqKCw9AK8Uj4k3appf6yz3VLPaRlWLTH9lFg4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "name": "Write Booking Record",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [
+        1248,
+        16
+      ],
+      "id": "0e338ed7-8b94-467c-8855-e2e72b560d79",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "x0mvA8X5CUc10Ppf",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Form": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "IF Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Valid": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Rentals",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Rentals": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Cars",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Admin Alert New Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Cars": {
+      "main": [
+        [
+          {
+            "node": "Check Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Availability": {
+      "main": [
+        [
+          {
+            "node": "IF Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Available": {
+      "main": [
+        [
+          {
+            "node": "Function Allocation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Admin Alert No Cars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin Alert No Cars": {
+      "main": [
+        [
+          {
+            "node": "Respond No Cars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function Allocation": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Update Cars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Update Cars": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Drivers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Drivers": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Booking Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Booking Record": {
+      "main": [
+        [
+          {
+            "node": "Write Booking Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "ca2abe7a-5d7e-42fe-9c2e-766436db857f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d5032510ebd26e757bfd1fafcf250e8094ef3a8c4de8460c932e8da6fd632138"
+  },
+  "id": "pGq77l8psELWeLBm3WEDt",
+  "tags": []
+}
